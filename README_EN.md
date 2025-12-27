@@ -183,6 +183,43 @@ sequenceDiagram
 | `d3Arena.js` | Force-directed graph, depth effect, orbit zone, connection highlighting |
 | `app.js` | App entry, controller initialization, state change handling |
 
+### Security Measures
+
+| Measure | Description |
+|---------|-------------|
+| **SRI Verification** | CDN resources (Plotly, D3, Font Awesome) use Subresource Integrity hash verification |
+| **CSV Injection Protection** | Filters dangerous prefixes `=`, `+`, `-`, `@` to prevent formula injection |
+| **Input Validation** | CSV parsing validates column count, data format, empty value handling |
+| **State Loop Protection** | Pub-Sub notification mechanism prevents infinite loops using `_isNotifying` flag |
+
+### Accessibility
+
+| Feature | Implementation |
+|---------|----------------|
+| **ARIA Labels** | All controls and chart areas have proper `role`, `aria-label`, `aria-describedby` |
+| **Keyboard Navigation** | Toggle buttons support arrow key navigation, Fate Partners cards support Enter/Space selection |
+| **Screen Readers** | Uses `.sr-only` class for screen reader-only descriptive text |
+| **Focus Management** | Interactive elements have clear `tabindex` and focus styles |
+
+### Testing
+
+Unit testing with [Vitest](https://vitest.dev/):
+
+```bash
+# Run tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+Test coverage:
+- `state.js` - State management, subscribe/notify, loop protection (10 tests)
+- `dataController.js` - Constants validation, statistics calculation, co-occurrence matrix (21 tests)
+
 ### Constants Organization
 
 All magic numbers are extracted into named constants, organized by category for maintainability:
@@ -222,20 +259,26 @@ LINE_WIDTH       // Line widths { thin, normal, highlight }
 
 ```
 day-29-well-of-probability/
-├── index.html              # Main page
+├── index.html              # Main page (with SRI, ARIA)
+├── favicon.svg             # SVG Favicon (coin-into-well imagery)
 ├── css/
-│   └── style.css           # Stylesheet
+│   └── style.css           # Stylesheet (with .sr-only)
 ├── js/
 │   ├── app.js              # Application entry
-│   ├── state.js            # Global state management
-│   ├── dataController.js   # Data processing and statistics
-│   ├── plotlyChart.js      # Plotly chart module
+│   ├── state.js            # Global state management (loop protection)
+│   ├── dataController.js   # Data processing and statistics (CSV protection)
+│   ├── plotlyChart.js      # Plotly chart module (ARIA)
 │   └── d3Arena.js          # D3 force-directed graph module
 ├── data/
 │   ├── lotto_2024.csv      # Lotto 649 2024 data
 │   ├── lotto_2025.csv      # Lotto 649 2025 data
 │   ├── super_2024.csv      # Super Lotto 2024 data
 │   └── super_2025.csv      # Super Lotto 2025 data
+├── tests/
+│   ├── state.test.js       # State management tests (10 tests)
+│   └── dataController.test.js  # Data controller tests (21 tests)
+├── package.json            # npm config (Vitest)
+├── vitest.config.js        # Vitest configuration
 ├── README.md
 └── README_EN.md
 ```
@@ -248,6 +291,12 @@ day-29-well-of-probability/
 # Clone the repo
 git clone https://github.com/tznthou/day-29-well-of-probability.git
 cd day-29-well-of-probability
+
+# Install test dependencies (optional)
+npm install
+
+# Run tests
+npm test
 
 # Open with Live Server or any static server
 # VS Code: Install Live Server extension, right-click index.html → Open with Live Server

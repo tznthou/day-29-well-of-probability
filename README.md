@@ -183,6 +183,43 @@ sequenceDiagram
 | `d3Arena.js` | 力導向圖、深度效果、軌道環、連線高亮 |
 | `app.js` | 應用入口、控制器初始化、狀態變更處理 |
 
+### 安全性措施
+
+| 措施 | 說明 |
+|------|------|
+| **SRI 驗證** | CDN 資源 (Plotly, D3, Font Awesome) 使用 Subresource Integrity 雜湊驗證 |
+| **CSV Injection 防護** | 過濾 `=`, `+`, `-`, `@` 等危險前綴，防止公式注入 |
+| **輸入驗證** | CSV 解析時驗證欄位數量、資料格式、空值處理 |
+| **狀態循環保護** | Pub-Sub 通知機制防止無限循環，使用 `_isNotifying` 旗標 |
+
+### 無障礙性 (Accessibility)
+
+| 功能 | 實作 |
+|------|------|
+| **ARIA 標籤** | 所有控制項、圖表區域均有適當的 `role`, `aria-label`, `aria-describedby` |
+| **鍵盤導航** | 切換按鈕支援方向鍵切換，命運共同體卡片支援 Enter/Space 選取 |
+| **螢幕閱讀器** | 使用 `.sr-only` 類別提供螢幕閱讀器專用描述文字 |
+| **焦點管理** | 互動元素有明確的 `tabindex` 和焦點樣式 |
+
+### 測試
+
+使用 [Vitest](https://vitest.dev/) 進行單元測試：
+
+```bash
+# 執行測試
+npm test
+
+# 監聽模式
+npm run test:watch
+
+# 測試覆蓋率
+npm run test:coverage
+```
+
+測試涵蓋範圍：
+- `state.js` - 狀態管理、訂閱/通知、循環保護 (10 tests)
+- `dataController.js` - 常量驗證、統計計算、共現矩陣 (21 tests)
+
 ### 常量組織
 
 所有魔術數字均提取為具名常量，按類別組織以提高可維護性：
@@ -222,20 +259,26 @@ LINE_WIDTH       // 線條寬度 { thin, normal, highlight }
 
 ```
 day-29-well-of-probability/
-├── index.html              # 主頁面
+├── index.html              # 主頁面 (含 SRI、ARIA)
+├── favicon.svg             # SVG Favicon (硬幣入井意象)
 ├── css/
-│   └── style.css           # 樣式表
+│   └── style.css           # 樣式表 (含 .sr-only)
 ├── js/
 │   ├── app.js              # 應用程式入口
-│   ├── state.js            # 全域狀態管理
-│   ├── dataController.js   # 數據處理與統計
-│   ├── plotlyChart.js      # Plotly 圖表模組
+│   ├── state.js            # 全域狀態管理 (循環保護)
+│   ├── dataController.js   # 數據處理與統計 (CSV 防護)
+│   ├── plotlyChart.js      # Plotly 圖表模組 (ARIA)
 │   └── d3Arena.js          # D3 力導向圖模組
 ├── data/
 │   ├── lotto_2024.csv      # 大樂透 2024 數據
 │   ├── lotto_2025.csv      # 大樂透 2025 數據
 │   ├── super_2024.csv      # 威力彩 2024 數據
 │   └── super_2025.csv      # 威力彩 2025 數據
+├── tests/
+│   ├── state.test.js       # 狀態管理測試 (10 tests)
+│   └── dataController.test.js  # 數據控制器測試 (21 tests)
+├── package.json            # npm 設定 (Vitest)
+├── vitest.config.js        # Vitest 配置
 ├── README.md
 └── README_EN.md
 ```
@@ -248,6 +291,12 @@ day-29-well-of-probability/
 # 複製專案
 git clone https://github.com/tznthou/day-29-well-of-probability.git
 cd day-29-well-of-probability
+
+# 安裝測試依賴 (可選)
+npm install
+
+# 執行測試
+npm test
 
 # 使用 Live Server 或任何靜態伺服器開啟
 # VS Code: 安裝 Live Server 擴充功能，右鍵 index.html → Open with Live Server

@@ -1,0 +1,20 @@
+{
+  "name": "day-29-well-of-probability",
+  "version": "1.0.0",
+  "description": "機率之井 - 將台灣彩券數據轉化為視覺交響樂",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": ["lottery", "visualization", "d3", "plotly", "taiwan"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/ui": "^4.0.16",
+    "jsdom": "^27.4.0",
+    "vitest": "^4.0.16"
+  }
+}

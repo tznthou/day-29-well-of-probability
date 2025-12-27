@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>機率之井 | The Well of Probability</title>
+    <meta name="description" content="將彩券數據轉化為視覺交響樂 — 機率是歷史的總結，不是未來的預言">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Plotly.js (with SRI) -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"
+            integrity="sha384-Hl48Kq2HifOWdXEjMsKo6qxqvRLTYqIGbvlENBmkHAxZKIGCXv43H6W1jA671RzC"
+            crossorigin="anonymous"></script>
+    <!-- D3.js (with SRI) -->
+    <script src="https://d3js.org/d3.v7.min.js"
+            integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i"
+            crossorigin="anonymous"></script>
+    <!-- Font Awesome (with SRI) -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
+          crossorigin="anonymous">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-container">
+            <div class="well-animation">
+                <div class="well-ring"></div>
+                <div class="well-ring"></div>
+                <div class="well-ring"></div>
+                <div class="well-ring"></div>
+                <div class="well-center"></div>
+            </div>
+            <h1 class="loading-title">機率之井</h1>
+            <p class="loading-subtitle">The Well of Probability</p>
+            <p class="loading-text">載入數據中...</p>
+        </div>
+        <p class="loading-philosophy">"機率是歷史的總結，不是未來的預言。"</p>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>機率之井</h1>
+            <p class="subtitle">The Well of Probability</p>
+            <p class="philosophy">機率是歷史的總結，不是未來的預言</p>
+            <button id="guide-btn" class="guide-btn">使用說明</button>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls" role="region" aria-label="篩選控制項">
+            <div class="control-group">
+                <label id="lottery-type-label">彩券類型</label>
+                <div class="toggle-buttons" id="lottery-type" role="radiogroup" aria-labelledby="lottery-type-label">
+                    <button class="toggle-btn active" data-value="lotto" role="radio" aria-checked="true">大樂透</button>
+                    <button class="toggle-btn" data-value="super" role="radio" aria-checked="false">威力彩</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label id="year-select-label">年度</label>
+                <div class="toggle-buttons" id="year-select" role="radiogroup" aria-labelledby="year-select-label">
+                    <button class="toggle-btn" data-value="2024" role="radio" aria-checked="false">2024</button>
+                    <button class="toggle-btn" data-value="2025" role="radio" aria-checked="false">2025</button>
+                    <button class="toggle-btn active" data-value="all" role="radio" aria-checked="true">合併</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label id="gap-range-label">遺漏期數計算</label>
+                <div class="toggle-buttons" id="gap-range" role="radiogroup" aria-labelledby="gap-range-label">
+                    <button class="toggle-btn" data-value="single" role="radio" aria-checked="false">單年度</button>
+                    <button class="toggle-btn active" data-value="merged" role="radio" aria-checked="true">跨年合併</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Panel (Plotly) -->
+        <section class="stats-panel">
+            <h2>統計審計</h2>
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3 id="frequency-chart-label">號碼頻率分佈</h3>
+                    <div id="frequency-chart" role="img" aria-labelledby="frequency-chart-label" aria-describedby="frequency-chart-desc"></div>
+                    <p id="frequency-chart-desc" class="sr-only">各號碼出現次數的柱狀圖，顏色依 Z-Score 分類</p>
+                </div>
+                <div class="chart-box">
+                    <h3 id="comparison-chart-label">年度對比</h3>
+                    <div id="comparison-chart" role="img" aria-labelledby="comparison-chart-label" aria-describedby="comparison-chart-desc"></div>
+                    <p id="comparison-chart-desc" class="sr-only">2024 與 2025 年各號碼出現率的折線對比圖</p>
+                </div>
+            </div>
+
+            <!-- Fate Partners -->
+            <div class="partners-section">
+                <h3 id="partners-label">命運共同體</h3>
+                <p class="partners-desc" id="partners-desc">哪些號碼經常一起出現？點擊卡片查看詳情</p>
+                <div id="partners-container" class="partners-grid" role="list" aria-labelledby="partners-label" aria-describedby="partners-desc"></div>
+            </div>
+        </section>
+
+        <!-- Arena (D3) -->
+        <section class="arena-section">
+            <h2 id="arena-label">命運競技場</h2>
+            <div class="arena-container">
+                <div id="arena" role="img" aria-labelledby="arena-label" aria-describedby="arena-desc"></div>
+                <p id="arena-desc" class="sr-only">力導向視覺化圖表，球體大小代表出現頻率，顏色代表 Z-Score 分類</p>
+                <!-- Info Tooltip -->
+                <div id="info-tooltip" class="tooltip hidden">
+                    <div class="tooltip-header">
+                        <span class="tooltip-number"></span>
+                        <span class="tooltip-status"></span>
+                    </div>
+                    <div class="tooltip-body">
+                        <div class="stat-row">
+                            <span class="stat-label">主號出現</span>
+                            <span class="stat-value main-count"></span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">特別號/第二區</span>
+                            <span class="stat-value special-count"></span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Z-Score</span>
+                            <span class="stat-value z-score"></span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">遺漏期數</span>
+                            <span class="stat-value gap-count"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Second Zone for Super Lotto -->
+            <div id="orbit-zone" class="orbit-zone hidden">
+                <h3>第二區軌道</h3>
+                <div id="orbit-container"></div>
+            </div>
+        </section>
+
+        <!-- Legend -->
+        <section class="legend">
+            <h3>判定標準</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="legend-color favorites"></span>
+                    <span>天選之子 (Z &gt; 2)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color normal"></span>
+                    <span>常態分佈</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color outcasts"></span>
+                    <span>被遺忘者 (Z &lt; -2)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>數據來源：台灣彩券 113-114 年度開獎紀錄</p>
+            <p class="warning">本工具僅供統計分析，不構成任何投注建議</p>
+        </footer>
+    </div>
+
+    <!-- Guide Modal -->
+    <div id="guide-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" aria-label="關閉">&times;</button>
+
+            <div class="modal-header">
+                <h2>使用說明</h2>
+                <p class="modal-subtitle">如何解讀機率之井的數據</p>
+            </div>
+
+            <div class="modal-body">
+                <!-- 重要聲明 -->
+                <div class="guide-section disclaimer-box">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> 重要聲明</h3>
+                    <p><strong>本工具僅為統計分析工具，不提供任何投注建議。</strong></p>
+                    <p>所有數據僅反映「過去」的開獎結果，無法預測「未來」的開獎號碼。每一期開獎都是獨立事件，過去的頻率不會影響未來的機率。</p>
+                </div>
+
+                <!-- 工具介紹 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-chart-column"></i> 工具介紹</h3>
+                    <p>機率之井將台灣彩券（大樂透、威力彩）的歷史開獎數據視覺化，讓您以考古學家的視角審視這些數字的「過去」，而非預測「未來」。</p>
+                </div>
+
+                <!-- 頻率分析 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-chart-line"></i> 頻率分佈圖</h3>
+                    <p><strong>顯示內容：</strong>每個號碼在選定期間內作為「主號」出現的次數。</p>
+                    <p><strong>如何解讀：</strong></p>
+                    <ul>
+                        <li>柱狀圖高度代表該號碼出現的頻率</li>
+                        <li>顏色深淺反映相對頻率</li>
+                        <li><strong>注意：</strong>高頻率不代表「好號碼」，低頻率不代表「即將出現」</li>
+                    </ul>
+                </div>
+
+                <!-- 年度對比 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-calendar-days"></i> 年度對比圖</h3>
+                    <p><strong>顯示內容：</strong>同一號碼在不同年度的出現頻率變化。</p>
+                    <p><strong>如何解讀：</strong></p>
+                    <ul>
+                        <li>比較 2024 與 2025 年度各號碼的表現差異</li>
+                        <li>可觀察號碼在不同時期的「歷史軌跡」</li>
+                        <li><strong>注意：</strong>年度差異僅為歷史紀錄，不代表趨勢會延續</li>
+                    </ul>
+                </div>
+
+                <!-- 命運共同體 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-handshake"></i> 命運共同體</h3>
+                    <p><strong>顯示內容：</strong>哪些號碼經常在「同一期」一起出現。</p>
+                    <p><strong>如何解讀：</strong></p>
+                    <ul>
+                        <li>排名越前面，代表這組號碼共同出現的次數越多</li>
+                        <li>點擊卡片可在競技場中高亮顯示該配對</li>
+                        <li><strong>注意：</strong>共現只是巧合的累積，不代表這些號碼有「特殊關係」</li>
+                    </ul>
+                </div>
+
+                <!-- 命運競技場 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-bullseye"></i> 命運競技場</h3>
+                    <p><strong>顯示內容：</strong>所有號碼的力導向視覺化，球體大小代表出現頻率。</p>
+                    <p><strong>顏色意義：</strong></p>
+                    <ul>
+                        <li><span class="color-badge favorites">金色</span> 天選之子：Z-Score &gt; 2（出現頻率顯著高於平均）</li>
+                        <li><span class="color-badge normal">藍色</span> 常態分佈：介於 -2 ~ 2 之間</li>
+                        <li><span class="color-badge outcasts">冰藍</span> 被遺忘者：Z-Score &lt; -2（出現頻率顯著低於平均）</li>
+                    </ul>
+                </div>
+
+                <!-- Z-Score 解釋 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-square-root-variable"></i> 什麼是 Z-Score？</h3>
+                    <p>Z-Score（標準分數）表示一個數值與平均值的距離，以標準差為單位。</p>
+                    <ul>
+                        <li>Z = 0：剛好等於平均值</li>
+                        <li>Z &gt; 2：出現頻率比平均高出 2 個標準差（約前 2.5%）</li>
+                        <li>Z &lt; -2：出現頻率比平均低 2 個標準差（約後 2.5%）</li>
+                    </ul>
+                    <p><strong>注意：</strong>這只是統計上的「異常」標記，不代表未來表現。</p>
+                </div>
+
+                <!-- 遺漏期數 -->
+                <div class="guide-section">
+                    <h3><i class="fa-solid fa-hourglass-half"></i> 遺漏期數</h3>
+                    <p><strong>顯示內容：</strong>該號碼距離上次出現已經過了幾期。</p>
+                    <p><strong>注意：</strong>遺漏期數長不代表「即將開出」。每一期開獎都是獨立事件，號碼不會「記得」自己已經多久沒出現。這是常見的賭徒謬誤。</p>
+                </div>
+
+                <!-- 再次聲明 -->
+                <div class="guide-section disclaimer-box">
+                    <h3><i class="fa-solid fa-lock"></i> 再次強調</h3>
+                    <p><strong>機率是歷史的總結，不是未來的預言。</strong></p>
+                    <p>本工具的所有數據都是對「過去」的統計分析。請以理性、娛樂的心態看待這些數字。投注請量力而為，切勿沉迷。</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-confirm-btn">我已了解，開始探索</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

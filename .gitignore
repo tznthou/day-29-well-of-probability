@@ -1,0 +1,45 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node.js (if added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (if added later)
+dist/
+build/
+.cache/
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Mockup files (AI generated, not for production)
+mockup/
+
+# Code review reports (generated, not for production)
+CODE_REVIEW_*.md
